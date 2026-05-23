@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Dashbet</title>
+  <link rel="stylesheet" href="/css/styles.css">
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+  <div id="app">
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="loading-screen">
+      <div class="loader-container">
+        <div class="loader"></div>
+        <h2>DASHBET</h2>
+        <p>Loading...</p>
+      </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="main-app" class="hidden">
+      <!-- Header -->
+      <header class="app-header">
+        <h1 class="logo">🎮 DASHBET</h1>
+        <div class="balance-badge">
+          <span class="balance-amount" id="header-balance">0.00 ETB</span>
+        </div>
+      </header>
+
+      <!-- Tab Content -->
+      <main class="tab-content">
+        <!-- HOME TAB -->
+        <div id="tab-home" class="tab-panel active">
+          <div class="welcome-banner">
+            <h2>Welcome to Dashbet!</h2>
+            <p>Play, Win & Withdraw instantly!</p>
+          </div>
+          <div class="promo-banner">
+            <div class="promo-text">
+              <h3>🎁 20% Cashback</h3>
+              <p>Get 20% back on your daily losses!</p>
+            </div>
+          </div>
+          <div class="section-title"><h3>🔥 Featured Games</h3></div>
+          <div class="game-cards">
+            <div class="game-card" onclick="switchToGame('chicken-road')">
+              <div class="game-icon">🐔</div>
+              <h4>Chicken Road</h4>
+              <p>Cross the road safely!</p>
+              <span class="game-badge">Popular</span>
+            </div>
+            <div class="game-card" onclick="switchToGame('keno')">
+              <div class="game-icon">🎱</div>
+              <h4>Fast Keno</h4>
+              <p>Pick lucky numbers!</p>
+              <span class="game-badge hot">Hot</span>
+            </div>
+          </div>
+          <div class="section-title"><h3>📊 Quick Stats</h3></div>
+          <div class="stats-grid">
+            <div class="stat-card"><span class="stat-value" id="home-total-wagered">0</span><span class="stat-label">Total Wagered</span></div>
+            <div class="stat-card"><span class="stat-value" id="home-total-won">0</span><span class="stat-label">Total Won</span></div>
+            <div class="stat-card"><span class="stat-value" id="home-games-played">0</span><span class="stat-label">Games</span></div>
+            <div class="stat-card"><span class="stat-value" id="home-referrals">0</span><span class="stat-label">Referrals</span></div>
+          </div>
+        </div>
+
+        <!-- GAMES TAB -->
+        <div id="tab-games" class="tab-panel">
+          <div class="games-selector">
+            <button class="game-tab-btn active" onclick="showGame('chicken-road')">🐔 Chicken Road</button>
+            <button class="game-tab-btn" onclick="showGame('keno')">🎱 Fast Keno</button>
+          </div>
+
+          <!-- Chicken Road -->
+          <div id="game-chicken-road" class="game-container">
+            <!-- Controls (before game starts) -->
+            <div id="cr-controls">
+              <div class="difficulty-selector">
+                <label>Difficulty</label>
+                <div class="difficulty-btns">
+                  <button class="diff-btn active" onclick="selectDifficulty('easy')" id="diff-easy">Easy</button>
+                  <button class="diff-btn" onclick="selectDifficulty('medium')" id="diff-medium">Medium</button>
+                  <button class="diff-btn" onclick="selectDifficulty('hard')" id="diff-hard">Hard</button>
+                  <button class="diff-btn" onclick="selectDifficulty('hardcore')" id="diff-hardcore">Hardcore</button>
+                </div>
+                <div class="difficulty-info" id="diff-info">Chance of collision: Low</div>
+              </div>
+              <div class="bet-input-group">
+                <label>Amount</label>
+                <div class="bet-input-row">
+                  <button class="bet-btn" onclick="setBet('cr', 5)">MIN</button>
+                  <input type="number" id="cr-bet" value="10" min="5" class="bet-input">
+                  <button class="bet-btn" onclick="setBet('cr', 500)">MAX</button>
+                </div>
+                <div class="quick-bets">
+                  <button onclick="setBet('cr', 5)">5</button>
+                  <button onclick="setBet('cr', 10)">10</button>
+                  <button onclick="setBet('cr', 25)">25</button>
+                  <button onclick="setBet('cr', 50)">50</button>
+                  <button onclick="setBet('cr', 100)">100</button>
+                </div>
+              </div>
+              <button class="play-btn" onclick="startChickenRoad()">Play</button>
+            </div>
+
+            <!-- Game Area (during game) -->
+            <div id="cr-game-area" class="hidden">
+              <div class="cr-game-wrapper">
+                <div class="cr-info-bar">
+                  <span class="multiplier-display" id="cr-multiplier">0.00x</span>
+                  <span class="cashout-display" id="cr-potential">0.00 ETB</span>
+                </div>
+                <div id="cr-road" class="cr-road"></div>
+              </div>
+              <div class="cr-actions">
+                <button class="cashout-btn" id="cr-cashout-btn" onclick="cashOutChickenRoad()" disabled>CASH OUT<br><span id="cr-cashout-amount">0.00 ETB</span></button>
+                <button class="go-btn" id="cr-go-btn" onclick="chickenGoStep()">GO</button>
+              </div>
+              <div id="cr-result" class="game-result hidden"></div>
+            </div>
+          </div>
+
+          <!-- Keno -->
+          <div id="game-keno" class="game-container hidden">
+            <div class="game-header">
+              <h3>🎱 Fast Keno</h3>
+              <p>Pick 1-10 numbers from 1-80</p>
+            </div>
+            <div id="keno-controls">
+              <div class="bet-input-group">
+                <label>Amount</label>
+                <div class="bet-input-row">
+                  <button class="bet-btn" onclick="setBet('keno', 5)">MIN</button>
+                  <input type="number" id="keno-bet" value="10" min="5" class="bet-input">
+                  <button class="bet-btn" onclick="setBet('keno', 500)">MAX</button>
+                </div>
+                <div class="quick-bets">
+                  <button onclick="setBet('keno', 5)">5</button>
+                  <button onclick="setBet('keno', 10)">10</button>
+                  <button onclick="setBet('keno', 25)">25</button>
+                  <button onclick="setBet('keno', 50)">50</button>
+                  <button onclick="setBet('keno', 100)">100</button>
+                </div>
+              </div>
+              <div class="keno-picks-info">
+                <span>Selected: <strong id="keno-pick-count">0</strong>/10</span>
+                <button class="clear-btn" onclick="clearKenoPicks()">Clear</button>
+              </div>
+              <div id="keno-board" class="keno-board"></div>
+              <button class="play-btn" onclick="playKeno()">Draw Numbers</button>
+            </div>
+            <div id="keno-result" class="game-result hidden"></div>
+          </div>
+        </div>
+
+        <!-- WALLET TAB -->
+        <div id="tab-wallet" class="tab-panel">
+          <div class="wallet-balance-card">
+            <span class="wallet-label">Your Balance</span>
+            <span class="wallet-amount" id="wallet-balance">0.00 ETB</span>
+          </div>
+          <div class="wallet-actions">
+            <button class="wallet-btn deposit" onclick="showWalletSection('deposit')">💰 Deposit</button>
+            <button class="wallet-btn withdraw" onclick="showWalletSection('withdraw')">💸 Withdraw</button>
+            <button class="wallet-btn" onclick="showWalletSection('promo')">🎟️ Promo</button>
+            <button class="wallet-btn" onclick="claimCashback()">🔄 Cashback</button>
+          </div>
+          <div id="wallet-deposit" class="wallet-section hidden">
+            <h3>Deposit Funds</h3>
+            <div class="payment-methods">
+              <button class="method-btn active" onclick="selectPayMethod('telbirr')">Telbirr</button>
+              <button class="method-btn" onclick="selectPayMethod('cbe_birr')">CBE Birr</button>
+              <button class="method-btn" onclick="selectPayMethod('cbe_account')">CBE Account</button>
+            </div>
+            <div id="pay-telbirr" class="pay-details">
+              <p><strong>Send to:</strong></p>
+              <p class="pay-number">0995877887</p>
+              <p class="pay-note">Telbirr app or USSD *127#</p>
+            </div>
+            <div id="pay-cbe_birr" class="pay-details hidden">
+              <p><strong>Send to:</strong></p>
+              <p class="pay-number">0995877887</p>
+              <p class="pay-note">CBE Birr app</p>
+            </div>
+            <div id="pay-cbe_account" class="pay-details hidden">
+              <p><strong>Transfer to:</strong></p>
+              <p class="pay-number">1000060681224</p>
+              <p class="pay-note">Commercial Bank of Ethiopia</p>
+            </div>
+            <input type="number" id="deposit-amount" placeholder="Amount (min 10 ETB)" class="form-input">
+            <input type="text" id="deposit-ref" placeholder="Transaction ID / Reference" class="form-input">
+            <button class="submit-btn" onclick="submitDeposit()">Submit Deposit</button>
+          </div>
+          <div id="wallet-withdraw" class="wallet-section hidden">
+            <h3>Withdraw Funds</h3>
+            <select id="withdraw-method" class="form-input"><option value="telbirr">Telbirr</option><option value="cbe_birr">CBE Birr</option><option value="cbe_account">CBE Account</option></select>
+            <input type="text" id="withdraw-account" placeholder="Your account/phone number" class="form-input">
+            <input type="number" id="withdraw-amount" placeholder="Amount (min 50 ETB)" class="form-input">
+            <button class="submit-btn" onclick="submitWithdraw()">Request Withdrawal</button>
+          </div>
+          <div id="wallet-promo" class="wallet-section hidden">
+            <h3>Promo Code</h3>
+            <input type="text" id="promo-code" placeholder="Enter promo code" class="form-input">
+            <button class="submit-btn" onclick="redeemPromo()">Redeem</button>
+          </div>
+          <div class="section-title"><h3>Recent Transactions</h3></div>
+          <div id="transaction-list" class="transaction-list"><p class="empty-state">No transactions yet</p></div>
+        </div>
+
+        <!-- PROFILE TAB -->
+        <div id="tab-profile" class="tab-panel">
+          <div class="profile-header">
+            <div class="profile-avatar">👤</div>
+            <h3 id="profile-name">User</h3>
+            <p id="profile-username">@username</p>
+          </div>
+          <div class="profile-stats">
+            <div class="profile-stat"><span class="stat-value" id="profile-deposited">0</span><span class="stat-label">Deposited</span></div>
+            <div class="profile-stat"><span class="stat-value" id="profile-withdrawn">0</span><span class="stat-label">Withdrawn</span></div>
+            <div class="profile-stat"><span class="stat-value" id="profile-wagered">0</span><span class="stat-label">Wagered</span></div>
+            <div class="profile-stat"><span class="stat-value" id="profile-won">0</span><span class="stat-label">Won</span></div>
+          </div>
+          <div class="referral-section">
+            <h3>Referral Program</h3>
+            <p>Earn <strong>10 ETB</strong> for every friend who deposits 100+ ETB!</p>
+            <div class="referral-link-box">
+              <input type="text" id="referral-link" class="form-input" readonly>
+              <button class="copy-btn" onclick="copyReferralLink()">Copy</button>
+            </div>
+            <div class="referral-stats">
+              <span>Referrals: <strong id="profile-referral-count">0</strong></span>
+              <span>Earned: <strong id="profile-referral-earnings">0 ETB</strong></span>
+            </div>
+          </div>
+          <div class="cashback-section">
+            <h3>Cashback</h3>
+            <p>Get <strong>20%</strong> back on your daily losses!</p>
+            <button class="submit-btn" onclick="claimCashback()">Claim Cashback</button>
+          </div>
+          <div class="profile-info"><p>Member since: <span id="profile-joined">-</span></p></div>
+        </div>
+      </main>
+
+      <!-- Bottom Nav -->
+      <nav class="bottom-nav">
+        <button class="nav-btn active" onclick="switchTab('home')"><span class="nav-icon">🏠</span><span class="nav-label">Home</span></button>
+        <button class="nav-btn" onclick="switchTab('games')"><span class="nav-icon">🎮</span><span class="nav-label">Games</span></button>
+        <button class="nav-btn" onclick="switchTab('wallet')"><span class="nav-icon">💰</span><span class="nav-label">Wallet</span></button>
+        <button class="nav-btn" onclick="switchTab('profile')"><span class="nav-icon">👤</span><span class="nav-label">Profile</span></button>
+      </nav>
+    </div>
+
+    <div id="toast" class="toast hidden"></div>
+  </div>
+  <script src="/js/app.js"></script>
+</body>
+</html>

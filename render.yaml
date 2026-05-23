@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: dashbet
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node src/server.js
+    envVars:
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: MINI_APP_URL
+        sync: false
+      - key: TELBIRR_PHONE
+        value: "0995877887"
+      - key: CBE_BIRR_PHONE
+        value: "0995877887"
+      - key: CBE_ACCOUNT_NUMBER
+        value: "1000060681224"
+      - key: ADMIN_KEY
+        generateValue: true
+      - key: NODE_ENV
+        value: production
+    disk:
+      name: dashbet-data
+      mountPath: /opt/render/project/src/data
+      sizeGB: 1
