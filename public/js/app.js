@@ -9,6 +9,9 @@ let crCurrentColumn = -1;
 let crMultipliers = [];
 let crBetAmount = 10;
 let kenoPicks = [];
+let kenoTimerInterval = null;
+let kenoPollingInterval = null;
+let kenoBetPlaced = false;
 let selectedPayMethod = 'telbirr';
 
 const DIFF_LABELS = {
@@ -77,6 +80,7 @@ function updateUI() {
   document.getElementById('profile-wagered').textContent = formatETB(currentUser.totalWagered);
   document.getElementById('profile-won').textContent = formatETB(currentUser.totalWon);
   document.getElementById('referral-link').value = `https://t.me/DashbetBot?start=${currentUser.telegramId}`;
+  document.getElementById('keno-user-id').textContent = `ID: ${currentUser.telegramId}`;
   if (currentUser.createdAt) document.getElementById('profile-joined').textContent = new Date(currentUser.createdAt).toLocaleDateString();
   loadProfile();
   loadTransactions();
@@ -98,6 +102,7 @@ function switchTab(tab) {
   event.currentTarget.classList.add('active');
   if (tab === 'wallet') loadTransactions();
   if (tab === 'profile') loadProfile();
+  if (tab === 'games') startKenoPolling();
 }
 
 function switchToGame(game) {
@@ -114,9 +119,11 @@ function showGame(game) {
   if (game === 'chicken-road') {
     document.getElementById('game-chicken-road').classList.remove('hidden');
     document.querySelectorAll('.game-tab-btn')[0].classList.add('active');
+    stopKenoPolling();
   } else {
     document.getElementById('game-keno').classList.remove('hidden');
     document.querySelectorAll('.game-tab-btn')[1].classList.add('active');
+    startKenoPolling();
   }
 }
 
@@ -134,42 +141,40 @@ function selectDifficulty(diff) {
 function buildRoad(columns, multipliers, currentColumn, crashed) {
   const road = document.getElementById('cr-road');
   road.innerHTML = '';
-
   for (let i = 0; i < columns; i++) {
     const col = document.createElement('div');
     col.className = 'cr-column';
-
-    // Multiplier circle at top
     const circle = document.createElement('div');
     circle.className = 'cr-mult-circle';
     if (i <= currentColumn && !crashed) {
       circle.classList.add('passed');
     } else if (i === currentColumn && crashed) {
       circle.classList.add('crashed');
-    } else if (i === currentColumn + 1 && !crashed) {
+    } else if (i === currentColumn + 1 && !crashed && currentColumn >= 0) {
+      circle.classList.add('current');
+    } else if (currentColumn < 0 && i === 0) {
       circle.classList.add('current');
     }
     circle.textContent = multipliers[i] ? multipliers[i].toFixed(2) + 'x' : '';
     col.appendChild(circle);
-
-    // Gate at bottom
+    if (i === currentColumn && !crashed && currentColumn >= 0) {
+      const chicken = document.createElement('div');
+      chicken.style.cssText = 'font-size:28px;text-align:center;margin:6px 0;';
+      chicken.textContent = '🐔';
+      col.appendChild(chicken);
+    } else if (i === currentColumn && crashed) {
+      const boom = document.createElement('div');
+      boom.style.cssText = 'font-size:28px;text-align:center;margin:6px 0;';
+      boom.textContent = '💥';
+      col.appendChild(boom);
+    } else {
+      const spacer = document.createElement('div');
+      spacer.style.cssText = 'height:40px;';
+      col.appendChild(spacer);
+    }
     const gate = document.createElement('div');
     gate.className = 'cr-gate';
     col.appendChild(gate);
-
-    // Chicken on current position
-    if (i === currentColumn && !crashed) {
-      const chicken = document.createElement('div');
-      chicken.style.cssText = 'font-size:28px;margin-top:8px;';
-      chicken.textContent = '🐔';
-      col.insertBefore(chicken, gate);
-    } else if (i === currentColumn && crashed) {
-      const boom = document.createElement('div');
-      boom.style.cssText = 'font-size:28px;margin-top:8px;';
-      boom.textContent = '💥';
-      col.insertBefore(boom, gate);
-    }
-
     road.appendChild(col);
   }
 }
@@ -178,7 +183,6 @@ async function startChickenRoad() {
   crBetAmount = parseInt(document.getElementById('cr-bet').value);
   if (!crBetAmount || crBetAmount < 5) return showToast('Minimum bet is 5 ETB', 'error');
   if (currentUser.balance < crBetAmount) return showToast('Insufficient balance', 'error');
-
   try {
     const res = await fetch(`${API_BASE}/api/games/chicken-road/start`, {
       method: 'POST',
@@ -187,7 +191,6 @@ async function startChickenRoad() {
     });
     const data = await res.json();
     if (data.error) return showToast(data.error, 'error');
-
     crSessionId = data.sessionId;
     crGameActive = true;
     crColumns = data.columns;
@@ -195,7 +198,6 @@ async function startChickenRoad() {
     crCurrentColumn = -1;
     updateBalance(data.balance);
     currentUser.balance = data.balance;
-
     document.getElementById('cr-controls').classList.add('hidden');
     document.getElementById('cr-game-area').classList.remove('hidden');
     document.getElementById('cr-result').classList.add('hidden');
@@ -204,7 +206,6 @@ async function startChickenRoad() {
     document.getElementById('cr-multiplier').textContent = '0.00x';
     document.getElementById('cr-potential').textContent = '0.00 ETB';
     document.getElementById('cr-cashout-amount').textContent = '0.00 ETB';
-
     buildRoad(crColumns, crMultipliers, -1, false);
   } catch (err) { showToast('Error starting game', 'error'); }
 }
@@ -212,7 +213,6 @@ async function startChickenRoad() {
 async function chickenGoStep() {
   if (!crGameActive || !crSessionId) return;
   document.getElementById('cr-go-btn').disabled = true;
-
   try {
     const res = await fetch(`${API_BASE}/api/games/chicken-road/go`, {
       method: 'POST',
@@ -220,13 +220,8 @@ async function chickenGoStep() {
       body: JSON.stringify({ sessionId: crSessionId })
     });
     const data = await res.json();
-    if (data.error) {
-      document.getElementById('cr-go-btn').disabled = false;
-      return showToast(data.error, 'error');
-    }
-
+    if (data.error) { document.getElementById('cr-go-btn').disabled = false; return showToast(data.error, 'error'); }
     crCurrentColumn = data.currentColumn;
-
     if (data.crashed) {
       crGameActive = false;
       buildRoad(crColumns, crMultipliers, data.currentColumn, true);
@@ -244,7 +239,6 @@ async function chickenGoStep() {
       document.getElementById('cr-cashout-amount').textContent = cashoutAmount + ' ETB';
       document.getElementById('cr-cashout-btn').disabled = false;
       document.getElementById('cr-go-btn').disabled = false;
-
       if (data.gameOver) {
         crGameActive = false;
         document.getElementById('cr-go-btn').disabled = true;
@@ -253,10 +247,7 @@ async function chickenGoStep() {
         if (data.balance !== undefined) { updateBalance(data.balance); currentUser.balance = data.balance; }
       }
     }
-  } catch (err) {
-    document.getElementById('cr-go-btn').disabled = false;
-    showToast('Error', 'error');
-  }
+  } catch (err) { document.getElementById('cr-go-btn').disabled = false; showToast('Error', 'error'); }
 }
 
 async function cashOutChickenRoad() {
@@ -282,11 +273,8 @@ function showGameResult(game, won, payout) {
   const resultEl = document.getElementById(`${game}-result`);
   resultEl.classList.remove('hidden', 'win', 'loss');
   resultEl.classList.add(won ? 'win' : 'loss');
-  if (won) {
-    resultEl.innerHTML = `🎉 You Won! Payout: ${parseFloat(payout).toFixed(2)} ETB`;
-  } else {
-    resultEl.innerHTML = `💥 Crashed! Better luck next time!`;
-  }
+  if (won) { resultEl.innerHTML = `🎉 You Won! Payout: ${parseFloat(payout).toFixed(2)} ETB`; }
+  else { resultEl.innerHTML = `💥 Crashed! Better luck next time!`; }
   setTimeout(() => {
     if (game === 'cr') {
       document.getElementById('cr-controls').classList.remove('hidden');
@@ -295,79 +283,161 @@ function showGameResult(game, won, payout) {
   }, 3000);
 }
 
-// ============ KENO ============
+// ============ KENO (ROUND-BASED) ============
 function initKenoBoard() {
   const board = document.getElementById('keno-board');
+  if (!board) return;
   board.innerHTML = '';
   for (let i = 1; i <= 80; i++) {
     const cell = document.createElement('div');
     cell.className = 'keno-cell';
     cell.textContent = i;
+    cell.id = `keno-cell-${i}`;
     cell.onclick = () => toggleKenoPick(i, cell);
     board.appendChild(cell);
   }
 }
 
 function toggleKenoPick(num, cell) {
+  if (kenoBetPlaced) return;
   const idx = kenoPicks.indexOf(num);
   if (idx > -1) { kenoPicks.splice(idx, 1); cell.classList.remove('selected'); }
   else {
     if (kenoPicks.length >= 10) return showToast('Maximum 10 numbers', 'error');
     kenoPicks.push(num); cell.classList.add('selected');
   }
-  document.getElementById('keno-pick-count').textContent = kenoPicks.length;
 }
 
-function clearKenoPicks() {
-  kenoPicks = [];
-  document.querySelectorAll('.keno-cell').forEach(c => c.classList.remove('selected', 'drawn', 'matched', 'missed'));
-  document.getElementById('keno-pick-count').textContent = '0';
-  document.getElementById('keno-result').classList.add('hidden');
+function showKenoTab(tab) {
+  document.querySelectorAll('.keno-tab-content').forEach(t => t.classList.add('hidden'));
+  document.querySelectorAll('.keno-tab').forEach(b => b.classList.remove('active'));
+  document.getElementById(`keno-tab-${tab}`).classList.remove('hidden');
+  event.currentTarget.classList.add('active');
+  if (tab === 'history') fetchKenoRound();
+  if (tab === 'results') fetchKenoResults();
 }
 
-async function playKeno() {
+function startKenoPolling() {
+  if (kenoPollingInterval) return;
+  fetchKenoRound();
+  kenoPollingInterval = setInterval(fetchKenoRound, 3000);
+}
+
+function stopKenoPolling() {
+  if (kenoPollingInterval) { clearInterval(kenoPollingInterval); kenoPollingInterval = null; }
+}
+
+async function fetchKenoRound() {
+  if (!currentUser) return;
+  try {
+    const res = await fetch(`${API_BASE}/api/games/keno/round`, { headers: { 'X-Telegram-ID': currentUser.telegramId } });
+    const data = await res.json();
+    updateKenoTimer(data.timeLeft);
+    document.getElementById('keno-total-bets').textContent = data.totalBets;
+    
+    // Update bets list
+    const betsList = document.getElementById('keno-bets-list');
+    if (data.bets && data.bets.length > 0) {
+      betsList.innerHTML = data.bets.map(b => `
+        <div class="keno-bet-item">
+          <div class="keno-bet-user">${b.username}</div>
+          <div class="keno-bet-picks">${b.picks.join(' ')}</div>
+          <div class="keno-bet-info">
+            <span>Bet ${b.betAmount}</span>
+            <span class="keno-bet-status">${b.status}</span>
+          </div>
+        </div>
+      `).join('');
+    } else {
+      betsList.innerHTML = '<p class="empty-state">No bets this round</p>';
+    }
+
+    // If round was drawn, show results
+    if (data.status === 'drawn' && data.drawnNumbers) {
+      showKenoDrawnNumbers(data.drawnNumbers);
+      kenoBetPlaced = false;
+      document.getElementById('keno-bet-submit').disabled = false;
+      document.getElementById('keno-bet-submit').textContent = 'BET';
+    }
+  } catch (err) { console.error('Keno round fetch error:', err); }
+}
+
+function updateKenoTimer(timeLeft) {
+  const mins = Math.floor(timeLeft / 60);
+  const secs = timeLeft % 60;
+  document.getElementById('keno-timer').textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+}
+
+function showKenoDrawnNumbers(drawnNumbers) {
+  // Mark drawn numbers on the board
+  for (let i = 1; i <= 80; i++) {
+    const cell = document.getElementById(`keno-cell-${i}`);
+    if (!cell) continue;
+    cell.classList.remove('drawn', 'matched', 'missed');
+    if (drawnNumbers.includes(i)) {
+      if (kenoPicks.includes(i)) {
+        cell.classList.add('matched');
+      } else {
+        cell.classList.add('drawn');
+      }
+    } else if (kenoPicks.includes(i)) {
+      cell.classList.add('missed');
+    }
+  }
+}
+
+async function placeKenoBet() {
+  if (kenoBetPlaced) return showToast('Already bet this round', 'error');
   if (kenoPicks.length < 1) return showToast('Pick at least 1 number', 'error');
   const betAmount = parseInt(document.getElementById('keno-bet').value);
   if (!betAmount || betAmount < 5) return showToast('Minimum bet is 5 ETB', 'error');
   if (currentUser.balance < betAmount) return showToast('Insufficient balance', 'error');
 
   try {
-    const res = await fetch(`${API_BASE}/api/games/keno/play`, {
+    const res = await fetch(`${API_BASE}/api/games/keno/bet`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-Telegram-ID': currentUser.telegramId },
       body: JSON.stringify({ betAmount, picks: kenoPicks })
     });
     const data = await res.json();
     if (data.error) return showToast(data.error, 'error');
+    kenoBetPlaced = true;
+    updateBalance(data.balance);
+    currentUser.balance = data.balance;
+    document.getElementById('keno-bet-submit').disabled = true;
+    document.getElementById('keno-bet-submit').textContent = 'Waiting...';
+    document.getElementById('keno-bet-display-amount').textContent = betAmount + ' ETB';
+    showToast('Bet placed! Waiting for draw...', 'success');
+  } catch (err) { showToast('Error placing bet', 'error'); }
+}
 
-    const cells = document.querySelectorAll('.keno-cell');
-    cells.forEach(c => c.classList.remove('drawn', 'matched', 'missed'));
+async function fetchKenoResults() {
+  if (!currentUser) return;
+  try {
+    const res = await fetch(`${API_BASE}/api/games/keno/results`, { headers: { 'X-Telegram-ID': currentUser.telegramId } });
+    const data = await res.json();
+    const list = document.getElementById('keno-results-list');
+    if (data.results && data.results.length > 0) {
+      list.innerHTML = data.results.map(r => {
+        const gd = JSON.parse(r.game_data || '{}');
+        return `<div class="keno-result-item ${r.result}">
+          <div>Round #${gd.roundId || '-'} | Bet: ${r.bet_amount} ETB</div>
+          <div>Matches: ${gd.matches ? gd.matches.length : 0} | ${r.result === 'win' ? 'Won: ' + r.payout + ' ETB' : 'Lost'}</div>
+        </div>`;
+      }).join('');
+    } else {
+      list.innerHTML = '<p class="empty-state">No results yet</p>';
+    }
+  } catch (err) { console.error('Keno results error:', err); }
+}
 
-    data.drawnNumbers.forEach((num, i) => {
-      setTimeout(() => {
-        const cell = cells[num - 1];
-        if (data.matches.includes(num)) cell.classList.add('matched');
-        else cell.classList.add('drawn');
-      }, i * 100);
-    });
-
-    setTimeout(() => {
-      kenoPicks.forEach(num => {
-        if (!data.matches.includes(num)) cells[num - 1].classList.add('missed');
-      });
-      const resultEl = document.getElementById('keno-result');
-      resultEl.classList.remove('hidden', 'win', 'loss');
-      if (data.payout > 0) {
-        resultEl.classList.add('win');
-        resultEl.innerHTML = `🎉 ${data.matchCount} Matches! Won: ${data.payout.toFixed(2)} ETB (${data.multiplier}x)`;
-      } else {
-        resultEl.classList.add('loss');
-        resultEl.innerHTML = `${data.matchCount} Matches - No win. Better luck next time!`;
-      }
-      updateBalance(data.balance);
-      currentUser.balance = data.balance;
-    }, data.drawnNumbers.length * 100 + 500);
-  } catch (err) { showToast('Error playing keno', 'error'); }
+// Reset keno picks for new round
+function resetKenoPicks() {
+  kenoPicks = [];
+  kenoBetPlaced = false;
+  document.querySelectorAll('.keno-cell').forEach(c => c.classList.remove('selected', 'drawn', 'matched', 'missed'));
+  document.getElementById('keno-bet-submit').disabled = false;
+  document.getElementById('keno-bet-submit').textContent = 'BET';
 }
 
 // ============ WALLET ============

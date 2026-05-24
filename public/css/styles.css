@@ -316,8 +316,61 @@ body {
 .toast.error { border-color: var(--red); }
 @keyframes fadeIn { from { opacity: 0; transform: translateX(-50%) translateY(10px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
 
+/* ============ KENO LITEGAMEZ STYLE ============ */
+.keno-header { display: flex; align-items: center; justify-content: space-between; padding: 10px; background: var(--bg-dark); border-radius: 10px; margin-bottom: 10px; }
+.keno-logo { font-size: 14px; font-weight: 900; color: var(--green); line-height: 1.1; }
+.keno-bet-display { background: var(--bg-card); padding: 5px 12px; border-radius: 6px; font-size: 12px; color: var(--green-bright); }
+.keno-user-id { font-size: 11px; color: var(--text-secondary); display: flex; align-items: center; gap: 4px; }
+.keno-user-id::after { content: '✓'; color: var(--green); font-weight: bold; }
+
+.keno-timer-bar { text-align: center; padding: 8px; margin-bottom: 8px; }
+.keno-timer { font-size: 22px; font-weight: 700; color: var(--green-bright); letter-spacing: 2px; }
+
+.keno-tabs { display: flex; gap: 4px; margin-bottom: 10px; }
+.keno-tab { flex: 1; padding: 9px 6px; background: var(--bg-card); border: none; border-radius: 8px; color: var(--text-secondary); font-size: 11px; cursor: pointer; font-weight: 600; }
+.keno-tab.active { color: var(--green); border-bottom: 2px solid var(--green); }
+.keno-tab-content.hidden { display: none; }
+
+.keno-instruction { display: flex; align-items: center; gap: 12px; padding: 12px; background: var(--bg-card); border-radius: 10px; margin-bottom: 10px; }
+.keno-balls { display: flex; gap: 4px; }
+.keno-ball { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; }
+.keno-ball.big { background: var(--green); color: #fff; width: 40px; height: 40px; font-size: 16px; }
+.keno-ball.small { background: var(--bg-secondary); color: var(--text-secondary); border: 1px solid var(--border); }
+.keno-instruction-text { font-size: 14px; }
+.keno-instruction-text strong { font-size: 16px; }
+.keno-green { color: var(--green-bright); }
+
+.keno-board { display: grid; grid-template-columns: repeat(10, 1fr); gap: 3px; margin-bottom: 10px; }
+.keno-cell { aspect-ratio: 1; background: var(--bg-card); border: 1px solid var(--border); border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.15s; color: var(--text-secondary); }
+.keno-cell:hover { border-color: var(--blue-light); }
+.keno-cell.selected { background: var(--green); color: #fff; border-color: var(--green); }
+.keno-cell.drawn { position: relative; }
+.keno-cell.drawn::after { content: ''; position: absolute; top: 2px; right: 2px; width: 6px; height: 6px; border-radius: 50%; background: #ef4444; }
+.keno-cell.matched { background: var(--green); color: #fff; border-color: var(--green-bright); box-shadow: 0 0 6px var(--green); }
+.keno-cell.missed { position: relative; }
+.keno-cell.missed::after { content: ''; position: absolute; top: 2px; right: 2px; width: 6px; height: 6px; border-radius: 50%; background: #3b82f6; }
+
+.keno-bet-controls { margin-bottom: 10px; }
+.keno-bet-btn { font-size: 18px; font-weight: 800; letter-spacing: 2px; }
+
+.keno-bets-header { display: flex; justify-content: space-around; padding: 8px; background: var(--bg-card); border-radius: 8px; margin-bottom: 8px; font-size: 12px; color: var(--text-secondary); }
+.keno-bets-header span { color: var(--green-bright); }
+
+.keno-bets-list { max-height: 300px; overflow-y: auto; }
+.keno-bet-item { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 10px; margin-bottom: 6px; }
+.keno-bet-user { font-size: 12px; color: var(--green-bright); margin-bottom: 4px; }
+.keno-bet-picks { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 4px; }
+.keno-bet-picks { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+.keno-bet-info { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-secondary); }
+.keno-bet-status { color: var(--green-bright); font-weight: 600; }
+
+.keno-results-list { max-height: 300px; overflow-y: auto; }
+.keno-result-item { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 10px; margin-bottom: 6px; font-size: 12px; }
+.keno-result-item.win { border-color: var(--green); }
+.keno-result-item.loss { border-color: var(--red); opacity: 0.8; }
+
 @media (max-width: 360px) {
-  .keno-board { grid-template-columns: repeat(5, 1fr); }
+  .keno-board { grid-template-columns: repeat(8, 1fr); }
   .cr-mult-circle { width: 40px; height: 40px; font-size: 10px; }
   .cr-gate { width: 36px; height: 46px; }
   .cr-column { min-width: 48px; }

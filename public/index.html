@@ -75,7 +75,6 @@
 
           <!-- Chicken Road -->
           <div id="game-chicken-road" class="game-container">
-            <!-- Controls (before game starts) -->
             <div id="cr-controls">
               <div class="difficulty-selector">
                 <label>Difficulty</label>
@@ -105,7 +104,6 @@
               <button class="play-btn" onclick="startChickenRoad()">Play</button>
             </div>
 
-            <!-- Game Area (during game) -->
             <div id="cr-game-area" class="hidden">
               <div class="cr-game-wrapper">
                 <div class="cr-info-bar">
@@ -122,35 +120,85 @@
             </div>
           </div>
 
-          <!-- Keno -->
+          <!-- KENO (Round-based like litegamez) -->
           <div id="game-keno" class="game-container hidden">
-            <div class="game-header">
-              <h3>🎱 Fast Keno</h3>
-              <p>Pick 1-10 numbers from 1-80</p>
+            <!-- Keno Header -->
+            <div class="keno-header">
+              <div class="keno-logo">FAST<br>KENO</div>
+              <div class="keno-bet-display">
+                <span id="keno-bet-display-amount">0.01 ETB</span>
+              </div>
+              <div class="keno-user-id" id="keno-user-id">ID: ---</div>
             </div>
-            <div id="keno-controls">
-              <div class="bet-input-group">
-                <label>Amount</label>
+
+            <!-- Timer -->
+            <div class="keno-timer-bar">
+              <span class="keno-timer" id="keno-timer">00:60</span>
+            </div>
+
+            <!-- Keno Tabs -->
+            <div class="keno-tabs">
+              <button class="keno-tab active" onclick="showKenoTab('game')">▶ GAME</button>
+              <button class="keno-tab" onclick="showKenoTab('history')">🕐 HISTORY</button>
+              <button class="keno-tab" onclick="showKenoTab('results')">✓ RESULTS</button>
+            </div>
+
+            <!-- GAME Tab -->
+            <div id="keno-tab-game" class="keno-tab-content">
+              <!-- Instruction -->
+              <div class="keno-instruction">
+                <div class="keno-balls">
+                  <span class="keno-ball big">1</span>
+                  <span class="keno-ball small">10</span>
+                  <span class="keno-ball small">80</span>
+                </div>
+                <div class="keno-instruction-text">
+                  <strong>Choose 10 numbers</strong><br>
+                  <span class="keno-green">From 1 to 80</span>
+                </div>
+              </div>
+
+              <!-- Number Grid -->
+              <div id="keno-board" class="keno-board"></div>
+
+              <!-- Bet Controls -->
+              <div class="keno-bet-controls">
                 <div class="bet-input-row">
                   <button class="bet-btn" onclick="setBet('keno', 5)">MIN</button>
                   <input type="number" id="keno-bet" value="10" min="5" class="bet-input">
                   <button class="bet-btn" onclick="setBet('keno', 500)">MAX</button>
                 </div>
                 <div class="quick-bets">
-                  <button onclick="setBet('keno', 5)">5</button>
                   <button onclick="setBet('keno', 10)">10</button>
-                  <button onclick="setBet('keno', 25)">25</button>
+                  <button onclick="setBet('keno', 20)">20</button>
+                  <button onclick="setBet('keno', 30)">30</button>
                   <button onclick="setBet('keno', 50)">50</button>
                   <button onclick="setBet('keno', 100)">100</button>
                 </div>
               </div>
-              <div class="keno-picks-info">
-                <span>Selected: <strong id="keno-pick-count">0</strong>/10</span>
-                <button class="clear-btn" onclick="clearKenoPicks()">Clear</button>
-              </div>
-              <div id="keno-board" class="keno-board"></div>
-              <button class="play-btn" onclick="playKeno()">Draw Numbers</button>
+
+              <button class="play-btn keno-bet-btn" id="keno-bet-submit" onclick="placeKenoBet()">BET</button>
             </div>
+
+            <!-- HISTORY Tab (other players' bets) -->
+            <div id="keno-tab-history" class="keno-tab-content hidden">
+              <div class="keno-bets-header">
+                <span>All <span id="keno-total-bets">0</span></span>
+                <span>My Tickets <span id="keno-my-tickets">0</span></span>
+                <span>My Bets <span id="keno-my-bets">0</span></span>
+              </div>
+              <div id="keno-bets-list" class="keno-bets-list">
+                <p class="empty-state">No bets this round</p>
+              </div>
+            </div>
+
+            <!-- RESULTS Tab -->
+            <div id="keno-tab-results" class="keno-tab-content hidden">
+              <div id="keno-results-list" class="keno-results-list">
+                <p class="empty-state">No results yet</p>
+              </div>
+            </div>
+
             <div id="keno-result" class="game-result hidden"></div>
           </div>
         </div>
