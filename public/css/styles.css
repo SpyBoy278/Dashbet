@@ -340,15 +340,16 @@ body {
 .keno-instruction-text strong { font-size: 16px; }
 .keno-green { color: var(--green-bright); }
 
-.keno-board { display: grid; grid-template-columns: repeat(10, 1fr); gap: 3px; margin-bottom: 10px; }
-.keno-cell { aspect-ratio: 1; background: var(--bg-card); border: 1px solid var(--border); border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.15s; color: var(--text-secondary); }
-.keno-cell:hover { border-color: var(--blue-light); }
-.keno-cell.selected { background: var(--green); color: #fff; border-color: var(--green); }
+.keno-board { display: grid; grid-template-columns: repeat(10, 1fr); gap: 1px; margin-bottom: 12px; background: #1e2433; border-radius: 4px; overflow: hidden; }
+.keno-cell { aspect-ratio: 1; background: #2d3548; border: none; border-radius: 0; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.12s; color: #8b95a8; position: relative; }
+.keno-cell:hover { background: #3a4560; }
+.keno-cell.selected { background: #1b7a5a; color: #fff; font-weight: 700; }
 .keno-cell.drawn { position: relative; }
-.keno-cell.drawn::after { content: ''; position: absolute; top: 2px; right: 2px; width: 6px; height: 6px; border-radius: 50%; background: #ef4444; }
-.keno-cell.matched { background: var(--green); color: #fff; border-color: var(--green-bright); box-shadow: 0 0 6px var(--green); }
+.keno-cell.drawn::after { content: ''; position: absolute; top: 3px; left: 3px; width: 7px; height: 7px; border-radius: 50%; background: #ef4444; }
+.keno-cell.matched { background: #1b7a5a; color: #fff; font-weight: 700; }
+.keno-cell.matched::after { content: ''; position: absolute; top: 3px; left: 3px; width: 7px; height: 7px; border-radius: 50%; background: #3b82f6; }
 .keno-cell.missed { position: relative; }
-.keno-cell.missed::after { content: ''; position: absolute; top: 2px; right: 2px; width: 6px; height: 6px; border-radius: 50%; background: #3b82f6; }
+.keno-cell.missed::after { content: ''; position: absolute; top: 3px; left: 3px; width: 7px; height: 7px; border-radius: 50%; background: #3b82f6; }
 
 .keno-bet-controls { margin-bottom: 10px; }
 .keno-bet-btn { font-size: 18px; font-weight: 800; letter-spacing: 2px; }
