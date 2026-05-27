@@ -283,7 +283,23 @@ function showGameResult(game, won, payout) {
   }, 3000);
 }
 
-// ============ KENO (ROUND-BASED) ============
+// ============ KENO (ROUND-BASED LITEGAMEZ STYLE) ============
+let kenoBetAmount = 5;
+let kenoDrawAnimating = false;
+
+const KENO_PAYOUT_TABLE = {
+  1: { 1: 3.5 },
+  2: { 1: 1, 2: 8 },
+  3: { 2: 2.5, 3: 25 },
+  4: { 2: 1.5, 3: 5, 4: 50 },
+  5: { 2: 1, 3: 3, 4: 15, 5: 100 },
+  6: { 2: 0.5, 3: 2, 4: 8, 5: 50, 6: 200 },
+  7: { 3: 1.5, 4: 5, 5: 20, 6: 100, 7: 500 },
+  8: { 3: 1, 4: 3, 5: 10, 6: 50, 7: 250, 8: 1000 },
+  9: { 3: 0.5, 4: 2, 5: 5, 6: 25, 7: 100, 8: 500, 9: 2000 },
+  10: { 4: 1.5, 5: 3, 6: 15, 7: 50, 8: 250, 9: 1000, 10: 5000 }
+};
+
 function initKenoBoard() {
   const board = document.getElementById('keno-board');
   if (!board) return;
@@ -299,13 +315,73 @@ function initKenoBoard() {
 }
 
 function toggleKenoPick(num, cell) {
-  if (kenoBetPlaced) return;
+  if (kenoBetPlaced || kenoDrawAnimating) return;
   const idx = kenoPicks.indexOf(num);
   if (idx > -1) { kenoPicks.splice(idx, 1); cell.classList.remove('selected'); }
   else {
     if (kenoPicks.length >= 10) return showToast('Maximum 10 numbers', 'error');
     kenoPicks.push(num); cell.classList.add('selected');
   }
+  updateKenoPossibleWin();
+}
+
+function updateKenoPossibleWin() {
+  const pwEl = document.getElementById('keno-possible-win');
+  const instrEl = document.getElementById('keno-instruction');
+  if (kenoPicks.length === 0) {
+    pwEl.classList.add('hidden');
+    instrEl.classList.remove('hidden');
+    return;
+  }
+  instrEl.classList.add('hidden');
+  pwEl.classList.remove('hidden');
+  
+  const numPicks = kenoPicks.length;
+  const table = KENO_PAYOUT_TABLE[numPicks] || {};
+  const maxMult = Math.max(...Object.values(table), 0);
+  const possibleWin = (kenoBetAmount * maxMult).toFixed(0);
+  document.getElementById('keno-pw-amount').textContent = possibleWin;
+  
+  // Build payout table
+  const ptEl = document.getElementById('keno-payout-table');
+  let ptHTML = '<div class="pt-col"><div class="pt-label">Match</div><div class="pt-label">Pays</div></div>';
+  for (const [matches, mult] of Object.entries(table)) {
+    if (mult > 0) {
+      ptHTML += `<div class="pt-col"><div class="pt-value">${matches}</div><div class="pt-value">x${mult}</div></div>`;
+    }
+  }
+  ptEl.innerHTML = ptHTML;
+  
+  // Build picks display
+  const picksEl = document.getElementById('keno-my-picks');
+  let picksHTML = '';
+  for (let i = 0; i < 10; i++) {
+    if (i < kenoPicks.length) {
+      picksHTML += `<div class="pick-num">${kenoPicks[i]}</div>`;
+    } else {
+      picksHTML += `<div class="pick-empty"></div>`;
+    }
+  }
+  picksEl.innerHTML = picksHTML;
+}
+
+function kenoAdjustBet(amount) {
+  kenoBetAmount = Math.max(5, kenoBetAmount + amount);
+  document.getElementById('keno-bet-value').textContent = kenoBetAmount.toFixed(2);
+  updateKenoPossibleWin();
+}
+
+function kenoX2Bet() {
+  kenoBetAmount = kenoBetAmount * 2;
+  document.getElementById('keno-bet-value').textContent = kenoBetAmount.toFixed(2);
+  updateKenoPossibleWin();
+}
+
+function kenoMaxBet() {
+  if (currentUser) kenoBetAmount = Math.floor(currentUser.balance);
+  if (kenoBetAmount < 5) kenoBetAmount = 5;
+  document.getElementById('keno-bet-value').textContent = kenoBetAmount.toFixed(2);
+  updateKenoPossibleWin();
 }
 
 function showKenoTab(tab) {
@@ -335,29 +411,40 @@ async function fetchKenoRound() {
     updateKenoTimer(data.timeLeft);
     document.getElementById('keno-total-bets').textContent = data.totalBets;
     
-    // Update bets list
+    // Update bets list in history tab
     const betsList = document.getElementById('keno-bets-list');
     if (data.bets && data.bets.length > 0) {
-      betsList.innerHTML = data.bets.map(b => `
-        <div class="keno-bet-item">
+      betsList.innerHTML = data.bets.map(b => {
+        let picksHTML = '';
+        for (let i = 0; i < 10; i++) {
+          if (i < b.picks.length) {
+            picksHTML += `<div class="pick-box">${b.picks[i]}</div>`;
+          } else {
+            picksHTML += `<div class="pick-box empty"></div>`;
+          }
+        }
+        return `<div class="keno-bet-item">
           <div class="keno-bet-user">${b.username}</div>
-          <div class="keno-bet-picks">${b.picks.join(' ')}</div>
+          <div class="keno-bet-picks">${picksHTML}</div>
           <div class="keno-bet-info">
-            <span>Bet ${b.betAmount}</span>
+            <span>Start Game ${b.betAmount}</span>
             <span class="keno-bet-status">${b.status}</span>
           </div>
-        </div>
-      `).join('');
+        </div>`;
+      }).join('');
     } else {
       betsList.innerHTML = '<p class="empty-state">No bets this round</p>';
     }
 
-    // If round was drawn, show results
+    // If round was drawn, show draw results
     if (data.status === 'drawn' && data.drawnNumbers) {
-      showKenoDrawnNumbers(data.drawnNumbers);
+      showKenoDrawResults(data.drawnNumbers);
       kenoBetPlaced = false;
       document.getElementById('keno-bet-submit').disabled = false;
-      document.getElementById('keno-bet-submit').textContent = 'BET';
+      document.getElementById('keno-bet-submit').textContent = 'START GAME';
+    } else {
+      // Hide draw results during betting
+      document.getElementById('keno-draw-results').classList.add('hidden');
     }
   } catch (err) { console.error('Keno round fetch error:', err); }
 }
@@ -365,10 +452,18 @@ async function fetchKenoRound() {
 function updateKenoTimer(timeLeft) {
   const mins = Math.floor(timeLeft / 60);
   const secs = timeLeft % 60;
-  document.getElementById('keno-timer').textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  document.getElementById('keno-timer').textContent = `${String(mins).padStart(2, '0')} : ${String(secs).padStart(2, '0')}`;
 }
 
-function showKenoDrawnNumbers(drawnNumbers) {
+function showKenoDrawResults(drawnNumbers) {
+  // Show the drawn numbers as green circles
+  const drawEl = document.getElementById('keno-draw-results');
+  drawEl.classList.remove('hidden');
+  document.getElementById('keno-draw-counter').textContent = '20 / 20';
+  
+  const numbersEl = document.getElementById('keno-drawn-numbers');
+  numbersEl.innerHTML = drawnNumbers.map(n => `<div class="drawn-num">${n}</div>`).join('');
+  
   // Mark drawn numbers on the board
   for (let i = 1; i <= 80; i++) {
     const cell = document.getElementById(`keno-cell-${i}`);
@@ -389,15 +484,14 @@ function showKenoDrawnNumbers(drawnNumbers) {
 async function placeKenoBet() {
   if (kenoBetPlaced) return showToast('Already bet this round', 'error');
   if (kenoPicks.length < 1) return showToast('Pick at least 1 number', 'error');
-  const betAmount = parseInt(document.getElementById('keno-bet').value);
-  if (!betAmount || betAmount < 5) return showToast('Minimum bet is 5 ETB', 'error');
-  if (currentUser.balance < betAmount) return showToast('Insufficient balance', 'error');
+  if (kenoBetAmount < 5) return showToast('Minimum bet is 5 ETB', 'error');
+  if (currentUser.balance < kenoBetAmount) return showToast('Insufficient balance', 'error');
 
   try {
     const res = await fetch(`${API_BASE}/api/games/keno/bet`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-Telegram-ID': currentUser.telegramId },
-      body: JSON.stringify({ betAmount, picks: kenoPicks })
+      body: JSON.stringify({ betAmount: kenoBetAmount, picks: kenoPicks })
     });
     const data = await res.json();
     if (data.error) return showToast(data.error, 'error');
@@ -406,7 +500,7 @@ async function placeKenoBet() {
     currentUser.balance = data.balance;
     document.getElementById('keno-bet-submit').disabled = true;
     document.getElementById('keno-bet-submit').textContent = 'Waiting...';
-    document.getElementById('keno-bet-display-amount').textContent = betAmount + ' ETB';
+    document.getElementById('keno-bet-display-amount').textContent = kenoBetAmount + ' ETB';
     showToast('Bet placed! Waiting for draw...', 'success');
   } catch (err) { showToast('Error placing bet', 'error'); }
 }
@@ -435,9 +529,13 @@ async function fetchKenoResults() {
 function resetKenoPicks() {
   kenoPicks = [];
   kenoBetPlaced = false;
+  kenoDrawAnimating = false;
   document.querySelectorAll('.keno-cell').forEach(c => c.classList.remove('selected', 'drawn', 'matched', 'missed'));
   document.getElementById('keno-bet-submit').disabled = false;
-  document.getElementById('keno-bet-submit').textContent = 'BET';
+  document.getElementById('keno-bet-submit').textContent = 'START GAME';
+  document.getElementById('keno-draw-results').classList.add('hidden');
+  document.getElementById('keno-possible-win').classList.add('hidden');
+  document.getElementById('keno-instruction').classList.remove('hidden');
 }
 
 // ============ WALLET ============

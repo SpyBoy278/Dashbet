@@ -317,58 +317,96 @@ body {
 @keyframes fadeIn { from { opacity: 0; transform: translateX(-50%) translateY(10px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
 
 /* ============ KENO LITEGAMEZ STYLE ============ */
-.keno-header { display: flex; align-items: center; justify-content: space-between; padding: 10px; background: var(--bg-dark); border-radius: 10px; margin-bottom: 10px; }
-.keno-logo { font-size: 14px; font-weight: 900; color: var(--green); line-height: 1.1; }
-.keno-bet-display { background: var(--bg-card); padding: 5px 12px; border-radius: 6px; font-size: 12px; color: var(--green-bright); }
-.keno-user-id { font-size: 11px; color: var(--text-secondary); display: flex; align-items: center; gap: 4px; }
-.keno-user-id::after { content: '✓'; color: var(--green); font-weight: bold; }
+.keno-header { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: #1a2332; border-radius: 8px; margin-bottom: 6px; }
+.keno-logo { font-size: 13px; font-weight: 900; color: #4caf50; line-height: 1.1; font-style: italic; }
+.keno-bet-display { background: #263545; padding: 4px 10px; border-radius: 4px; font-size: 11px; color: #4caf50; }
+.keno-user-id { font-size: 11px; color: #9ca3af; display: flex; align-items: center; gap: 4px; }
+.keno-user-id::after { content: '\2713'; color: #4caf50; font-weight: bold; font-size: 14px; }
 
-.keno-timer-bar { text-align: center; padding: 8px; margin-bottom: 8px; }
-.keno-timer { font-size: 22px; font-weight: 700; color: var(--green-bright); letter-spacing: 2px; }
+.keno-timer-bar { text-align: center; padding: 6px; margin-bottom: 4px; }
+.keno-timer { font-size: 24px; font-weight: 700; color: #4caf50; letter-spacing: 3px; }
 
-.keno-tabs { display: flex; gap: 4px; margin-bottom: 10px; }
-.keno-tab { flex: 1; padding: 9px 6px; background: var(--bg-card); border: none; border-radius: 8px; color: var(--text-secondary); font-size: 11px; cursor: pointer; font-weight: 600; }
-.keno-tab.active { color: var(--green); border-bottom: 2px solid var(--green); }
+/* Possible Win Section */
+.keno-possible-win { background: #1e2d3d; border-radius: 10px; padding: 12px; margin-bottom: 8px; }
+.keno-possible-win.hidden { display: none; }
+.keno-pw-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 16px; color: #fff; }
+.keno-pw-amount { color: #4caf50; font-weight: 700; font-size: 20px; }
+.keno-help { width: 24px; height: 24px; border-radius: 50%; background: #2d4050; color: #4caf50; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; }
+.keno-payout-table { display: flex; gap: 8px; font-size: 11px; color: #9ca3af; margin-bottom: 8px; flex-wrap: wrap; }
+.keno-payout-table .pt-col { text-align: center; }
+.keno-payout-table .pt-label { color: #6b7280; }
+.keno-payout-table .pt-value { color: #fff; font-weight: 600; }
+.keno-my-picks { display: flex; gap: 4px; flex-wrap: wrap; }
+.keno-my-picks .pick-num { width: 28px; height: 28px; background: #1b7a5a; color: #fff; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; }
+.keno-my-picks .pick-empty { width: 28px; height: 28px; background: #2a3a4a; border: 1px solid #3a4a5a; border-radius: 4px; }
+
+/* Draw Results */
+.keno-draw-results { text-align: center; padding: 12px; margin-bottom: 8px; }
+.keno-draw-results.hidden { display: none; }
+.keno-draw-counter { font-size: 13px; color: #9ca3af; margin-bottom: 8px; text-align: right; }
+.keno-drawn-numbers { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; }
+.keno-drawn-numbers .drawn-num { width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, #2e7d32, #4caf50); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+
+/* Instruction */
+.keno-instruction { display: flex; align-items: center; gap: 12px; padding: 12px; background: #1e2d3d; border-radius: 10px; margin-bottom: 8px; position: relative; }
+.keno-instruction .keno-help { position: absolute; top: 10px; right: 10px; }
+.keno-balls { display: flex; gap: 4px; align-items: flex-end; }
+.keno-ball { border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+.keno-ball.big { background: linear-gradient(135deg, #2e7d32, #4caf50); color: #fff; width: 44px; height: 44px; font-size: 18px; }
+.keno-ball.small { background: linear-gradient(135deg, #37474f, #546e7a); color: #ccc; width: 30px; height: 30px; font-size: 11px; border: none; }
+.keno-instruction-text { font-size: 14px; color: #fff; }
+.keno-instruction-text strong { font-size: 18px; display: block; margin-bottom: 2px; }
+.keno-green { color: #4caf50; font-size: 14px; }
+
+/* Keno Tabs */
+.keno-tabs { display: flex; gap: 0; margin-bottom: 8px; border-bottom: 1px solid #2a3a4a; }
+.keno-tab { flex: 1; padding: 10px 4px; background: transparent; border: none; border-bottom: 2px solid transparent; color: #9ca3af; font-size: 11px; cursor: pointer; font-weight: 600; }
+.keno-tab.active { color: #4caf50; border-bottom-color: #4caf50; }
 .keno-tab-content.hidden { display: none; }
 
-.keno-instruction { display: flex; align-items: center; gap: 12px; padding: 12px; background: var(--bg-card); border-radius: 10px; margin-bottom: 10px; }
-.keno-balls { display: flex; gap: 4px; }
-.keno-ball { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; }
-.keno-ball.big { background: var(--green); color: #fff; width: 40px; height: 40px; font-size: 16px; }
-.keno-ball.small { background: var(--bg-secondary); color: var(--text-secondary); border: 1px solid var(--border); }
-.keno-instruction-text { font-size: 14px; }
-.keno-instruction-text strong { font-size: 16px; }
-.keno-green { color: var(--green-bright); }
-
-.keno-board { display: grid; grid-template-columns: repeat(10, 1fr); gap: 1px; margin-bottom: 12px; background: #1e2433; border-radius: 4px; overflow: hidden; }
-.keno-cell { aspect-ratio: 1; background: #2d3548; border: none; border-radius: 0; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.12s; color: #8b95a8; position: relative; }
-.keno-cell:hover { background: #3a4560; }
+/* Number Grid - flat dark table like litegamez */
+.keno-board { display: grid; grid-template-columns: repeat(10, 1fr); gap: 1px; margin-bottom: 10px; background: #1a2332; border-radius: 4px; overflow: hidden; }
+.keno-cell { aspect-ratio: 1; background: #2b3a4c; border: none; border-radius: 0; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 500; cursor: pointer; transition: background 0.12s; color: #c0c8d4; position: relative; }
+.keno-cell:active { background: #3a4d60; }
 .keno-cell.selected { background: #1b7a5a; color: #fff; font-weight: 700; }
 .keno-cell.drawn { position: relative; }
-.keno-cell.drawn::after { content: ''; position: absolute; top: 3px; left: 3px; width: 7px; height: 7px; border-radius: 50%; background: #ef4444; }
+.keno-cell.drawn::after { content: ''; position: absolute; top: 2px; left: 2px; width: 8px; height: 8px; border-radius: 50%; background: #ef4444; }
 .keno-cell.matched { background: #1b7a5a; color: #fff; font-weight: 700; }
-.keno-cell.matched::after { content: ''; position: absolute; top: 3px; left: 3px; width: 7px; height: 7px; border-radius: 50%; background: #3b82f6; }
-.keno-cell.missed { position: relative; }
-.keno-cell.missed::after { content: ''; position: absolute; top: 3px; left: 3px; width: 7px; height: 7px; border-radius: 50%; background: #3b82f6; }
+.keno-cell.matched::after { content: ''; position: absolute; top: 2px; left: 2px; width: 8px; height: 8px; border-radius: 50%; background: #3b82f6; }
+.keno-cell.missed { }
+.keno-cell.missed::after { content: ''; position: absolute; top: 2px; left: 2px; width: 8px; height: 8px; border-radius: 50%; background: #3b82f6; }
 
+/* Bet Controls - litegamez style */
 .keno-bet-controls { margin-bottom: 10px; }
-.keno-bet-btn { font-size: 18px; font-weight: 800; letter-spacing: 2px; }
+.keno-bet-row { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 10px; }
+.keno-minus-btn, .keno-plus-btn { width: 40px; height: 40px; border-radius: 50%; background: #2a3a4a; border: 1px solid #3a4a5a; color: #fff; font-size: 20px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.keno-minus-btn:active, .keno-plus-btn:active { background: #3a4d60; }
+.keno-bet-value { font-size: 22px; font-weight: 700; color: #fff; min-width: 70px; text-align: center; }
+.keno-x2-btn, .keno-max-btn { padding: 8px 14px; background: #2a3a4a; border: 1px solid #3a4a5a; border-radius: 6px; color: #4caf50; font-size: 13px; font-weight: 700; cursor: pointer; }
+.keno-x2-btn:active, .keno-max-btn:active { background: #3a4d60; }
 
-.keno-bets-header { display: flex; justify-content: space-around; padding: 8px; background: var(--bg-card); border-radius: 8px; margin-bottom: 8px; font-size: 12px; color: var(--text-secondary); }
-.keno-bets-header span { color: var(--green-bright); }
+/* START GAME button - big green */
+.keno-start-btn { width: 100%; padding: 16px; background: linear-gradient(135deg, #2e7d32, #4caf50); border: none; border-radius: 10px; color: #fff; font-size: 18px; font-weight: 800; letter-spacing: 2px; cursor: pointer; }
+.keno-start-btn:active { background: linear-gradient(135deg, #1b5e20, #388e3c); }
+.keno-start-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-.keno-bets-list { max-height: 300px; overflow-y: auto; }
-.keno-bet-item { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 10px; margin-bottom: 6px; }
-.keno-bet-user { font-size: 12px; color: var(--green-bright); margin-bottom: 4px; }
-.keno-bet-picks { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 4px; }
-.keno-bet-picks { font-size: 13px; font-weight: 600; color: var(--text-primary); }
-.keno-bet-info { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-secondary); }
-.keno-bet-status { color: var(--green-bright); font-weight: 600; }
+/* History - player bets like litegamez */
+.keno-bets-header { display: flex; justify-content: space-around; padding: 10px; font-size: 13px; color: #9ca3af; border-bottom: 1px solid #2a3a4a; margin-bottom: 8px; }
+.keno-bets-header span { color: #4caf50; }
 
-.keno-results-list { max-height: 300px; overflow-y: auto; }
-.keno-result-item { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 10px; margin-bottom: 6px; font-size: 12px; }
-.keno-result-item.win { border-color: var(--green); }
-.keno-result-item.loss { border-color: var(--red); opacity: 0.8; }
+.keno-bets-list { max-height: 350px; overflow-y: auto; }
+.keno-bet-item { background: #1e2d3d; border: 1px solid #2a3a4a; border-radius: 8px; padding: 10px; margin-bottom: 6px; }
+.keno-bet-user { font-size: 12px; color: #4caf50; margin-bottom: 6px; font-weight: 600; }
+.keno-bet-picks { display: flex; flex-wrap: wrap; gap: 3px; margin-bottom: 6px; }
+.keno-bet-picks .pick-box { width: 26px; height: 26px; background: #1b7a5a; color: #fff; border-radius: 3px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; }
+.keno-bet-picks .pick-box.empty { background: #2a3a4a; border: 1px solid #3a4a5a; }
+.keno-bet-info { display: flex; justify-content: space-between; font-size: 12px; color: #9ca3af; }
+.keno-bet-status { color: #4caf50; font-weight: 600; }
+
+.keno-results-list { max-height: 350px; overflow-y: auto; }
+.keno-result-item { background: #1e2d3d; border: 1px solid #2a3a4a; border-radius: 8px; padding: 10px; margin-bottom: 6px; font-size: 12px; color: #c0c8d4; }
+.keno-result-item.win { border-color: #4caf50; }
+.keno-result-item.loss { border-color: #ef4444; opacity: 0.8; }
 
 @media (max-width: 360px) {
   .keno-board { grid-template-columns: repeat(8, 1fr); }

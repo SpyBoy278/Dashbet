@@ -126,7 +126,7 @@
             <div class="keno-header">
               <div class="keno-logo">FAST<br>KENO</div>
               <div class="keno-bet-display">
-                <span id="keno-bet-display-amount">0.01 ETB</span>
+                <span id="keno-bet-display-amount">0.00 ETB</span>
               </div>
               <div class="keno-user-id" id="keno-user-id">ID: ---</div>
             </div>
@@ -136,48 +136,61 @@
               <span class="keno-timer" id="keno-timer">00:60</span>
             </div>
 
+            <!-- Possible Win + Payout Table (shown after bet) -->
+            <div id="keno-possible-win" class="keno-possible-win hidden">
+              <div class="keno-pw-header">
+                <span>Possible win <span class="keno-pw-amount" id="keno-pw-amount">0</span></span>
+                <span class="keno-help">?</span>
+              </div>
+              <div class="keno-payout-table" id="keno-payout-table"></div>
+              <div class="keno-my-picks" id="keno-my-picks"></div>
+            </div>
+
+            <!-- Draw Results (shown after draw) -->
+            <div id="keno-draw-results" class="keno-draw-results hidden">
+              <div class="keno-draw-counter" id="keno-draw-counter">20 / 20</div>
+              <div class="keno-drawn-numbers" id="keno-drawn-numbers"></div>
+            </div>
+
+            <!-- Instruction (before bet) -->
+            <div id="keno-instruction" class="keno-instruction">
+              <div class="keno-balls">
+                <span class="keno-ball big">1</span>
+                <span class="keno-ball small">10</span>
+                <span class="keno-ball small">80</span>
+              </div>
+              <div class="keno-instruction-text">
+                <strong>Choose 10 numbers</strong><br>
+                <span class="keno-green">From 1 to 80</span>
+              </div>
+              <span class="keno-help">?</span>
+            </div>
+
             <!-- Keno Tabs -->
             <div class="keno-tabs">
               <button class="keno-tab active" onclick="showKenoTab('game')">▶ GAME</button>
               <button class="keno-tab" onclick="showKenoTab('history')">🕐 HISTORY</button>
               <button class="keno-tab" onclick="showKenoTab('results')">✓ RESULTS</button>
+              <button class="keno-tab" onclick="showKenoTab('stats')">📊 STATS</button>
             </div>
 
             <!-- GAME Tab -->
             <div id="keno-tab-game" class="keno-tab-content">
-              <!-- Instruction -->
-              <div class="keno-instruction">
-                <div class="keno-balls">
-                  <span class="keno-ball big">1</span>
-                  <span class="keno-ball small">10</span>
-                  <span class="keno-ball small">80</span>
-                </div>
-                <div class="keno-instruction-text">
-                  <strong>Choose 10 numbers</strong><br>
-                  <span class="keno-green">From 1 to 80</span>
-                </div>
-              </div>
-
               <!-- Number Grid -->
               <div id="keno-board" class="keno-board"></div>
 
               <!-- Bet Controls -->
               <div class="keno-bet-controls">
-                <div class="bet-input-row">
-                  <button class="bet-btn" onclick="setBet('keno', 5)">MIN</button>
-                  <input type="number" id="keno-bet" value="10" min="5" class="bet-input">
-                  <button class="bet-btn" onclick="setBet('keno', 500)">MAX</button>
-                </div>
-                <div class="quick-bets">
-                  <button onclick="setBet('keno', 10)">10</button>
-                  <button onclick="setBet('keno', 20)">20</button>
-                  <button onclick="setBet('keno', 30)">30</button>
-                  <button onclick="setBet('keno', 50)">50</button>
-                  <button onclick="setBet('keno', 100)">100</button>
+                <div class="keno-bet-row">
+                  <button class="keno-minus-btn" onclick="kenoAdjustBet(-5)">−</button>
+                  <span class="keno-bet-value" id="keno-bet-value">5.00</span>
+                  <button class="keno-plus-btn" onclick="kenoAdjustBet(5)">+</button>
+                  <button class="keno-x2-btn" onclick="kenoX2Bet()">X2</button>
+                  <button class="keno-max-btn" onclick="kenoMaxBet()">MAX</button>
                 </div>
               </div>
 
-              <button class="play-btn keno-bet-btn" id="keno-bet-submit" onclick="placeKenoBet()">BET</button>
+              <button class="keno-start-btn" id="keno-bet-submit" onclick="placeKenoBet()">START GAME</button>
             </div>
 
             <!-- HISTORY Tab (other players' bets) -->
@@ -185,7 +198,7 @@
               <div class="keno-bets-header">
                 <span>All <span id="keno-total-bets">0</span></span>
                 <span>My Tickets <span id="keno-my-tickets">0</span></span>
-                <span>My Bets <span id="keno-my-bets">0</span></span>
+                <span>My Games <span id="keno-my-bets">0</span></span>
               </div>
               <div id="keno-bets-list" class="keno-bets-list">
                 <p class="empty-state">No bets this round</p>
@@ -197,6 +210,11 @@
               <div id="keno-results-list" class="keno-results-list">
                 <p class="empty-state">No results yet</p>
               </div>
+            </div>
+
+            <!-- STATS Tab -->
+            <div id="keno-tab-stats" class="keno-tab-content hidden">
+              <p class="empty-state">Stats coming soon</p>
             </div>
 
             <div id="keno-result" class="game-result hidden"></div>
